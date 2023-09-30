@@ -7,6 +7,13 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
+#include <glm/glm.hpp>
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
+#include <glm/gtc/type_ptr.hpp>
   
 
 class Shader
@@ -115,6 +122,10 @@ public:
     { 
         glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()), value); 
     };
+    void setMat4(const std::string &name, glm::mat4 projectionMat)
+    {
+         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, GL_FALSE, glm::value_ptr(projectionMat));
+    }
 
 };
   

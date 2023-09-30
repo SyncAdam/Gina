@@ -3,37 +3,108 @@
 #include <cmath>
 #include <iostream>
 
+#include <glm/glm.hpp>
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
+#include <glm/gtc/type_ptr.hpp>
+
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "shader.h"
 #include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow *window);
+void processInput(GLFWwindow *window, float deltaT);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* windows, double xOffset, double yOffset);
 
 //settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 
-    float vertices[] = {
-        // positions          // colors           // texture coords
-         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
-    };
-    unsigned int indices[] = {  
-        0, 1, 3, // first triangle
-        1, 2, 3  // second triangle
-    };
+float vertices[] = {
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
+
+glm::vec3 cubePositions[] = {
+    glm::vec3( 0.0f,  0.0f,  0.0f), 
+    glm::vec3( 2.0f,  5.0f, -15.0f), 
+    glm::vec3(-1.5f, -2.2f, -2.5f),  
+    glm::vec3(-3.8f, -2.0f, -12.3f),  
+    glm::vec3( 2.4f, -0.4f, -3.5f),  
+    glm::vec3(-1.7f,  3.0f, -7.5f),  
+    glm::vec3( 1.3f, -2.0f, -2.5f),  
+    glm::vec3( 1.5f,  2.0f, -2.5f), 
+    glm::vec3( 1.5f,  0.2f, -1.5f), 
+    glm::vec3(-1.3f,  1.0f, -1.5f)  
+};
+
+glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, -1.0f);
+//cameraDirection actually points towards the camera
+glm::vec3 cameraDirection = glm::normalize(cameraPosition - cameraTarget);
+glm::vec3 cameraRight = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), cameraDirection));
+glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+
+float cameraYaw = -90.0f;
+float cameraPitch = 0.0f;
+float cameraFOV = 45.0f;
+
+    float lastXPos = SCR_WIDTH / 2;
+    float lastYPos = SCR_HEIGHT / 2;
+
 
 int main()
 {
 
 	unsigned int VBO;  //vertex buffer object
 	unsigned int VAO;  //vertex array object
-	unsigned int EBO;  //element buffer object
+
+
+    //------------------------------
 
 
     //glfw initialization and configuration
@@ -66,30 +137,30 @@ int main()
         return -1;
     }
 
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback); 
+
+    //------------------------------
+
+
     Shader ginaShader("./src/shader.vs", "./src/shader.fs");
 
-	//vertex buffer object for storing vertex data in gpu memory and vertex array object
+	//generate vertex buffer object for storing vertex data in gpu memory, vertex array object and element array object
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO); //generate buffer
-	glGenBuffers(1, &EBO);
 
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    //bind the Vertex Array Object first, then bind and set vertex buffers, and then configure vertex attributes.
 	glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO); //bind buffer to gl array buffer target
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
 	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
 
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -97,6 +168,7 @@ int main()
 
 	//wireframe mode gl_line/gl-fill
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glEnable(GL_DEPTH_TEST);
 
     //load first texture
     unsigned int imgID;
@@ -166,25 +238,70 @@ int main()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, imgID1);
 
+    //------------------------------
+
+        glm::mat4 projection;
+        projection = glm::perspective(glm::radians(cameraFOV), 800.0f / 600.0f, 0.1f, 100.0f);
+        ginaShader.setMat4("projection", projection);
+
+    //------------------------------
+
 
     //render loop
+
+    float deltaT = 0.0f;
+    float lastFrame = glfwGetTime();
+
     while (!glfwWindowShouldClose(window))
     {
 
-        processInput(window);
+        deltaT = glfwGetTime() - lastFrame;
+        //std::cout << 1/deltaT) << std::endl;
+        lastFrame = glfwGetTime();
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        processInput(window, deltaT);
+
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, imgID);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, imgID1);
 
-		ginaShader.use();
+        ginaShader.use();
+
+        //cameraDirection actually points towards the camera
+        cameraDirection = glm::normalize(cameraPosition - cameraTarget);
+        cameraRight = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), cameraDirection));
+        cameraUp = glm::cross(cameraDirection, cameraRight);
+
+
+        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 view = glm::mat4(1.0f);
+
+        projection = glm::perspective(glm::radians(cameraFOV), 800.0f / 600.0f, 0.1f, 100.0f);
+        ginaShader.setMat4("projection", projection);
+
+        view = glm::lookAt(cameraPosition, cameraPosition + cameraTarget, glm::vec3(0.0f, 1.0f, 0.0f));
+
+        unsigned int modelLoc = glGetUniformLocation(ginaShader.shaderProgram, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+        unsigned int viewLoc = glGetUniformLocation(ginaShader.shaderProgram, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        for(unsigned int i = 0; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = (i+1) * 10 * (float)glfwGetTime(); 
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 1.0f, 1.0f));
+            ginaShader.setMat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -197,14 +314,61 @@ int main()
     return 0;
 }
 
-void processInput(GLFWwindow *window)
+void processInput(GLFWwindow *window, float deltaT)
 {
+    const float cameraSpeed = 2.0f * deltaT;
+
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPosition += cameraSpeed * cameraTarget;
+    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPosition -= cameraSpeed * cameraTarget;
+    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPosition -= cameraSpeed * glm::normalize(glm::cross(cameraTarget, glm::vec3(0.0f, 1.0f, 0.0f)));
+    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPosition += cameraSpeed * glm::normalize(glm::cross(cameraTarget, glm::vec3(0.0f, 1.0f, 0.0f)));
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	//height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    float xOffset = xpos - lastXPos;
+    float yOffset = ypos - lastYPos;
+
+    lastXPos = xpos;
+    lastYPos = ypos;
+
+    const float sensitivity = 0.1f;
+    xOffset *= sensitivity;
+    yOffset *= sensitivity;
+
+    cameraYaw += xOffset;
+    cameraPitch -= yOffset;
+
+    if(cameraPitch > 89.0f) cameraPitch = 89.0f;
+    if(cameraPitch < -89.0f) cameraPitch = -89.0f;
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+    direction.y = sin(glm::radians(cameraPitch));
+    direction.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+    cameraTarget = glm::normalize(direction);
+}
+
+void scroll_callback(GLFWwindow* windows, double xoffset, double yoffset)
+{
+
+    cameraFOV -= (float) yoffset;
+
+    std::cout << cameraFOV << std::endl;
+
+    if(cameraFOV > 45.0f) cameraFOV = 45.0f;
+    if(cameraFOV < 5.0f) cameraFOV = 5.0f;
 }
