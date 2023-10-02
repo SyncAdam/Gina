@@ -8,4 +8,4 @@ Current state:
  - Basic vertex shader
  - Basic fragment shader
 
-[[cube.gif]]
+![](https://github.com/SyncAdam/Gina/cube.gif)
