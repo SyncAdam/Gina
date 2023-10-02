@@ -7,5 +7,6 @@ Current state:
  - Camera movement
  - Basic vertex shader
  - Basic fragment shader
+ - Ambient and diffuse lighting
 
 ![](cube.gif)
