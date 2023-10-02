@@ -8,3 +8,4 @@ Current state:
  - Basic vertex shader
  - Basic fragment shader
 
+[[cube.gif]]
